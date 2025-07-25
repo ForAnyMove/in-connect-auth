@@ -1,0 +1,186 @@
+.auth_screen {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.auth_container {
+  flex: 1;
+  padding: 10vh 5vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.auth_form {
+  width: 100%;
+  max-width: 30rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-height: 100%;
+}
+
+.auth_form h1 {
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+.auth_field {
+  display: flex;
+  flex-direction: column;
+}
+
+.auth_input_wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-top: 0.25rem;
+  height: 5vh;
+}
+
+.auth_icon {
+  position: absolute;
+  left: 0.875rem;
+  height: 1.25rem;
+  opacity: 0.6;
+}
+
+.auth_input {
+  width: 100%;
+  height: 100%;
+  padding-right: 2.5rem;
+  padding-left: 2.75rem;
+  border-radius: 2rem;
+  border: none;
+  background-color: #F6F6F6;
+  font-size: 1rem;
+}
+
+.auth_label.error {
+  color: #EB2929;
+}
+.auth_input.error {
+  color: #EB2929;
+}
+.auth_input.error::placeholder {
+  color: #EB2929;
+}
+
+.auth_eye_btn {
+  position: absolute;
+  right: 0.75rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth_eye_icon {
+  width: 1.125rem;
+  height: 1.125rem;
+  opacity: 0.6;
+}
+
+.auth_btn {
+  background-color: #1E1E1E;
+  color: #ffffff;
+  height: 5vh;
+  border-radius: 1.5rem;
+  border: none;
+  font-size: 0.8rem;
+  cursor: pointer;
+  width: 100%;
+}
+
+.auth_divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.auth_line {
+  flex: 1;
+  height: 1px;
+  background-color: #080808;
+  opacity: 0.2;
+}
+
+.auth_or {
+  color: #080808;
+  opacity: 0.5;
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+.auth_switch {
+  display: flex;
+  justify-content: center;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.auth_link {
+  background: none;
+  border: none;
+  color: #0057ff;
+  text-decoration: underline;
+  cursor: pointer;
+  font-weight: 500;
+  padding: 0;
+}
+
+.auth_telegram_btn {
+  background-color: #2AABEE;
+  background-image: linear-gradient(
+    90deg,
+    #2AABEE 0%,
+    #229ED9 100%
+  );
+  color: #ffffff;
+  height: 5vh;
+  border-radius: 1.5rem;
+  border: none;
+  font-size: 0.8rem;
+  cursor: pointer;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.auth_side_image {
+  flex: 1;
+  background-color: #000;
+  background-image: url('../assets/images/cat_frame.png');
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+@media (max-width: 48rem) {
+  .auth_screen {
+    flex-direction: column;
+  }
+
+  .auth_side_image {
+    display: none;
+  }
+
+  .auth_container {
+    width: 100%;
+    padding: 5vh 6vw;
+    align-items: center;
+  }
+}

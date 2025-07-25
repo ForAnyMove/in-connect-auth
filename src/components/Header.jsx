@@ -37,7 +37,7 @@ export default function Header() {
               <img src={download} alt='download' className='nav_icon' />
             </a>
           </li>
-          <li className='nav-item'>
+          <li className='nav-item active'>
             <a href='#profile'>
               <img src={profile} alt='profile' className='nav_icon' />
             </a>

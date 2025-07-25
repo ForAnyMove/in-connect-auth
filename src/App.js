@@ -13,7 +13,7 @@ function App() {
       {isAuthenticated ? (
         <PersonalScreen />
       ) : (
-        <AuthScreen />
+        <AuthScreen accessAuth={() => setIsAuthenticated(true)}/>
       )}
     </>
   );
