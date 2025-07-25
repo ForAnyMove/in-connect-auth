@@ -26,7 +26,7 @@ export default function AuthScreen({accessAuth}) {
     e.preventDefault();
     // Dummy error simulation
     if (
-      form.login !== 'admin@fusetheme.com' ||
+      form.login !== 'admin' ||
       form.password !== 'admin'
     ) {
       setError(true);
