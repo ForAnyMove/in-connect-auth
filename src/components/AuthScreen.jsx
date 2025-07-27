@@ -1,9 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import eyeIcon from '../assets/icons/eye.png';
 import eyeSlashIcon from '../assets/icons/eye_slash.png';
 import lockIcon from '../assets/icons/lock.png';
 import userIcon from '../assets/icons/user_auth_icon.png';
 import './AuthScreen.css';
+import { register } from '../utils/supabase/authService';
+import { supabase } from '../utils/supabase/supabaseClient';
+import axios from 'axios';
 
 const initialState = {
   login: '',
@@ -48,6 +51,52 @@ export default function AuthScreen({accessAuth}) {
   };
 
   const handleTogglePassword = () => setShowPassword((prev) => !prev);
+  
+  const handleRegister = async () => {
+    // const result = await register(form.login, form.password);
+    const { login: username, password } = form;
+//     const result = await fetch("https://wjczmkjsfvadutsutcck.supabase.co/functions/v1/registerUser", {
+//   method: "POST",
+//   headers: { "Content-Type": "application/json" },
+//   body: JSON.stringify({ username, password }),
+// })  
+
+// const { data, error } = await supabase.functions.invoke('registerUser', {
+//   body: { name: 'Functions' },
+// })
+// console.log('Function response:', data, error);
+
+  //   const result = await register(username, password);
+  // console.log('Registration result:', result);
+  
+    
+    // if (result.error) {
+    //   console.error('Ошибка регистрации:', result.error);
+    // } else {
+    //   console.log('Успешно зарегистрирован:', result.data);
+    // }
+//     const options = {method: 'GET', url: 'https://panel.syncvk.com/api/users'};
+
+// try {
+//   const { data } = await axios.request(options);
+//   console.log(data);
+// } catch (error) {
+//   console.error(error);
+// }
+  };
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      const { data, error } = await supabase.functions.invoke('getSyncvkUsers');
+      if (error) {
+        console.error('Ошибка получения пользователей:', error);
+      } else {
+        console.log('Пользователи:', data.users);
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   const loginPlaceholder = error ? 'Такой логин не найден' : 'Введите ваш логин';
   const loginLabelClass = error ? 'auth_label error' : 'auth_label';
@@ -104,7 +153,7 @@ export default function AuthScreen({accessAuth}) {
               </button>
             </div>
           </div>
-          <button className='auth_btn' type='submit'>
+          <button className='auth_btn' type='submit' onClick={() => isRegister ? handleRegister() : handleSubmit()}>
             {isRegister ? 'Зарегистрироваться' : 'Войти'}
           </button>
           <div className='auth_divider'>
