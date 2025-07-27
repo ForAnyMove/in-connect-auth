@@ -13,6 +13,15 @@ const initialState = {
   password: '',
 };
 
+    const fetchUsers = async () => {
+      const { data, error } = await supabase.functions.invoke('getSyncvkUsers');
+      if (error) {
+        console.error('Ошибка получения пользователей:', error);
+      } else {
+        console.log('Пользователи:', data.users);
+      }
+    };
+
 export default function AuthScreen({accessAuth}) {
   const [form, setForm] = useState(initialState);
   const [showPassword, setShowPassword] = useState(false);
@@ -83,20 +92,21 @@ export default function AuthScreen({accessAuth}) {
 // } catch (error) {
 //   console.error(error);
 // }
+fetchUsers()
   };
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      const { data, error } = await supabase.functions.invoke('getSyncvkUsers');
-      if (error) {
-        console.error('Ошибка получения пользователей:', error);
-      } else {
-        console.log('Пользователи:', data.users);
-      }
-    };
+  // useEffect(() => {
+  //   const fetchUsers = async () => {
+  //     const { data, error } = await supabase.functions.invoke('getSyncvkUsers');
+  //     if (error) {
+  //       console.error('Ошибка получения пользователей:', error);
+  //     } else {
+  //       console.log('Пользователи:', data.users);
+  //     }
+  //   };
 
-    fetchUsers();
-  }, []);
+  //   fetchUsers();
+  // }, []);
 
   const loginPlaceholder = error ? 'Такой логин не найден' : 'Введите ваш логин';
   const loginLabelClass = error ? 'auth_label error' : 'auth_label';
