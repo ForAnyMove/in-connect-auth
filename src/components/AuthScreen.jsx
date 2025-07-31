@@ -4,53 +4,106 @@ import eyeSlashIcon from '../assets/icons/eye_slash.png';
 import lockIcon from '../assets/icons/lock.png';
 import userIcon from '../assets/icons/user_auth_icon.png';
 import './AuthScreen.css';
-import { register } from '../utils/supabase/authService';
 import { supabase } from '../utils/supabase/supabaseClient';
-import axios from 'axios';
 
 const initialState = {
   login: '',
   password: '',
 };
 
-    const fetchUsers = async () => {
-      const { data, error } = await supabase.functions.invoke('getSyncvkUsers');
-      if (error) {
-        console.error('Ошибка получения пользователей:', error);
-      } else {
-        console.log('Пользователи:', data.users);
-      }
-    };
-
-export default function AuthScreen({accessAuth}) {
+export default function AuthScreen({ accessAuth, authUser }) {
   const [form, setForm] = useState(initialState);
   const [showPassword, setShowPassword] = useState(false);
   const [isRegister, setIsRegister] = useState(false);
   const [error, setError] = useState(false);
+  const [validationErrorLogin, setValidationErrorLogin] = useState('');
+  const [validationErrorPassword, setValidationErrorPassword] = useState('');
+
+  useEffect(() => {
+    // Глобально объявляем функцию
+    window.onTelegramAuth = function (user) {
+      console.log('Получен пользователь Telegram:', user);
+      // например: fetch('/api/telegram-auth', { method: 'POST', body: JSON.stringify(user) })
+    };
+
+    // Создаём и добавляем виджет
+    const script = document.createElement('script');
+    script.src = 'https://telegram.org/js/telegram-widget.js?7';
+    script.async = true;
+    script.setAttribute('data-telegram-login', 'inConnect_auth_bot'); // без @
+    script.setAttribute('data-size', 'large');
+    script.setAttribute('data-userpic', 'false');
+    script.setAttribute('data-onauth', 'onTelegramAuth(user)');
+    script.setAttribute('data-request-access', 'write');
+
+    document.getElementById('telegram-button')?.appendChild(script);
+  }, []);
+
+  const validateLogin = (login) => {
+    const usernamePattern = /^[a-zA-Z0-9_-]{6,36}$/;
+    return usernamePattern.test(login);
+  };
+
+  const validatePassword = (password) => {
+    const lengthValid = password.length >= 6 && password.length <= 64;
+    const hasLetter = /[a-zA-Z]/.test(password);
+    const hasDigit = /\d/.test(password);
+    const validChars = /^[a-zA-Z0-9_-]+$/.test(password);
+    return lengthValid && hasLetter && hasDigit && validChars;
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    if (name === 'login') {
+      setValidationErrorLogin('');
+    } else if (name === 'password') {
+      setValidationErrorPassword('');
+    }
     setForm((prev) => ({ ...prev, [name]: value }));
     if (error) setError(false);
   };
 
+  useEffect(() => {
+    const getUserData = async () => {
+      const { data, error } = await supabase.functions.invoke('getUserData');
+      if (error) {
+        console.error('Ошибка получения данных пользователя:', error);
+        return;
+      } else {
+        authUser(data.user); // твоя логика
+        accessAuth(); // переход в защищённую часть
+      }
+    };
+    getUserData();
+  }, [accessAuth, authUser]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Dummy error simulation
-    if (
-      form.login !== 'admin' ||
-      form.password !== 'admin'
-    ) {
-      setError(true);
-      setForm((prev) => ({
-        ...prev,
-        login: '',
-        password: '',
-      }));
-      return;
-    }
-    // Success logic
-    accessAuth();
+    const { login: username, password } = form;
+
+    const loginUser = async () => {
+      const { data, error } = await supabase.functions.invoke('loginUser', {
+        body: { name: 'Functions', username: username, password: password },
+      });
+
+      if (error) {
+        console.error('Ошибка при вызове функции:', error);
+      } else {
+        const { authData, authError } = await supabase.auth.signInWithPassword({
+          email: `${username}@generated.email`,
+          password: data.user.password_hash
+        });
+        
+        if (authError) {
+          console.error('Ошибка при входе:', authError);
+        } else {
+          console.log('Пользователь успешно вошел:', authData);
+        }
+        authUser(data.user);
+        accessAuth();
+      }
+    };
+    loginUser();
   };
 
   const handleToggleMode = () => {
@@ -60,55 +113,43 @@ export default function AuthScreen({accessAuth}) {
   };
 
   const handleTogglePassword = () => setShowPassword((prev) => !prev);
-  
-  const handleRegister = async () => {
-    // const result = await register(form.login, form.password);
+
+  const handleRegister = (e) => {
+    e.preventDefault();
     const { login: username, password } = form;
-//     const result = await fetch("https://wjczmkjsfvadutsutcck.supabase.co/functions/v1/registerUser", {
-//   method: "POST",
-//   headers: { "Content-Type": "application/json" },
-//   body: JSON.stringify({ username, password }),
-// })  
 
-// const { data, error } = await supabase.functions.invoke('registerUser', {
-//   body: { name: 'Functions' },
-// })
-// console.log('Function response:', data, error);
+    if (!validateLogin(username)) {
+      setValidationErrorLogin(
+        'Логин должен быть 6-36 символов, содержать только латиницу, цифры, "_" или "-"'
+      );
+      return;
+    }
 
-  //   const result = await register(username, password);
-  // console.log('Registration result:', result);
-  
-    
-    // if (result.error) {
-    //   console.error('Ошибка регистрации:', result.error);
-    // } else {
-    //   console.log('Успешно зарегистрирован:', result.data);
-    // }
-//     const options = {method: 'GET', url: 'https://panel.syncvk.com/api/users'};
+    if (!validatePassword(password)) {
+      setValidationErrorPassword(
+        'Пароль должен содержать хотя бы одну букву, одну цифру и быть длиной от 6 до 64 символов. Разрешены только латиница, цифры, "_" и "-"'
+      );
+      return;
+    }
 
-// try {
-//   const { data } = await axios.request(options);
-//   console.log(data);
-// } catch (error) {
-//   console.error(error);
-// }
-fetchUsers()
+    const registerUser = async () => {
+      const { data, error } = await supabase.functions.invoke('registerUser', {
+        body: { name: 'Functions', username: username, password: password },
+      });
+
+      if (error) {
+        console.error('Ошибка при вызове функции:', error);
+      } else {
+        authUser(data.user);
+        accessAuth();
+      }
+    };
+    registerUser();
   };
 
-  // useEffect(() => {
-  //   const fetchUsers = async () => {
-  //     const { data, error } = await supabase.functions.invoke('getSyncvkUsers');
-  //     if (error) {
-  //       console.error('Ошибка получения пользователей:', error);
-  //     } else {
-  //       console.log('Пользователи:', data.users);
-  //     }
-  //   };
-
-  //   fetchUsers();
-  // }, []);
-
-  const loginPlaceholder = error ? 'Такой логин не найден' : 'Введите ваш логин';
+  const loginPlaceholder = error
+    ? 'Такой логин не найден'
+    : 'Введите ваш логин';
   const loginLabelClass = error ? 'auth_label error' : 'auth_label';
   const inputClass = error ? 'auth_input error' : 'auth_input';
 
@@ -132,6 +173,9 @@ fetchUsers()
                 // autoComplete='username'
               />
             </div>
+            {validationErrorLogin && (
+              <div className='auth_error_message'>{validationErrorLogin}</div>
+            )}
           </div>
           <div className='auth_field'>
             <label className={loginLabelClass}>Пароль</label>
@@ -162,8 +206,17 @@ fetchUsers()
                 />
               </button>
             </div>
+            {validationErrorPassword && (
+              <div className='auth_error_message'>
+                {validationErrorPassword}
+              </div>
+            )}
           </div>
-          <button className='auth_btn' type='submit' onClick={() => isRegister ? handleRegister() : handleSubmit()}>
+          <button
+            className='auth_btn'
+            type='submit'
+            onClick={(e) => (isRegister ? handleRegister(e) : handleSubmit(e))}
+          >
             {isRegister ? 'Зарегистрироваться' : 'Войти'}
           </button>
           <div className='auth_divider'>
@@ -183,7 +236,7 @@ fetchUsers()
               {isRegister ? 'Войти' : 'Зарегистрироваться'}
             </button>
           </div>
-          <button className='auth_telegram_btn' type='button'>
+          <button id='telegram-button' className='auth_telegram_btn' type='button'>
             <svg
               xmlns='http://www.w3.org/2000/svg'
               width='25'

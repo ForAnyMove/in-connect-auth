@@ -1,130 +1,145 @@
-import { serve } from "https://deno.land/std@0.192.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { hash } from "https://deno.land/x/bcrypt/mod.ts";
-import { v4 as uuidv4 } from "https://deno.land/std@0.192.0/uuid/mod.ts";
+import { serve } from 'https://deno.land/std@0.192.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.5';
+import bcrypt from 'https://esm.sh/bcryptjs@2.4.3';
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*", // <-- На проде укажи конкретный origin!
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+// Supabase env vars
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const syncvkKey = Deno.env.get('SYNCVK_ACCESS_KEY')!;
+
+// Init Supabase client with Service Role
+const supabase = createClient(supabaseUrl, serviceRoleKey);
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", {
-      headers: corsHeaders,
+  // ✅ CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 204,
+      headers: corsHeaders(),
     });
   }
 
   try {
     const { username, password } = await req.json();
 
-    if (!username || !password) {
-      return new Response(JSON.stringify({ error: "Missing username or password" }), {
-        status: 400,
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "application/json",
-        },
-      });
+    // Проверка username
+    const usernamePattern = /^[a-zA-Z0-9_-]{6,36}$/;
+    if (!usernamePattern.test(username)) {
+      return jsonResponse({ error: 'Неверный формат username' }, 400);
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
-
+    // Проверка — не занят ли username
     const { data: existingUser } = await supabase
-      .from("users")
-      .select("id")
-      .eq("username", username)
+      .from('users')
+      .select('id')
+      .eq('username', username)
       .maybeSingle();
 
     if (existingUser) {
-      return new Response(JSON.stringify({ error: "Username already exists" }), {
-        status: 409,
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "application/json",
-        },
-      });
+      return jsonResponse({ error: 'Такой username уже занят' }, 400);
     }
 
-    const hashedPassword = await hash(password);
+    // Хэширование пароля
+    const hashedPassword = bcrypt.hashSync(password, 10);
 
-    const generateCode = () =>
-      Array.from({ length: 6 }, () =>
-        Math.random().toString(36)[2].toUpperCase()
-      ).join("");
+    // Регистрируем пользователя через Supabase Auth
+    const { data: authData, error: authError } =
+      await supabase.auth.admin.createUser({
+        email: `${username}@generated.email`, // или требуй реальный email
+        password: hashedPassword,
+        email_confirm: true, // сразу подтверждён
+      });
 
-    const shortCode = generateCode();
+    if (authError || !authData.user) {
+      console.error('Ошибка регистрации в Supabase Auth:', authError);
+      return jsonResponse({ error: 'Ошибка регистрации' }, 500);
+    }
 
-    const { data: newUser, error } = await supabase
-      .from("users")
-      .insert([{ username, password_hash: hashedPassword, code: shortCode }])
+    const authUserId = authData.user.id;
+
+    // Создание пользователя в Supabase
+    const { data: newUser, error: insertError } = await supabase
+      .from('users')
+      .insert([
+        { username, password_hash: hashedPassword, auth_user_id: authUserId },
+      ])
       .select()
       .single();
 
-    if (error || !newUser) {
-      return new Response(JSON.stringify({ error: "Failed to create user in DB" }), {
-        status: 500,
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "application/json",
-        },
-      });
+    if (insertError || !newUser) {
+      console.error('Insert error:', insertError);
+      return jsonResponse({ error: 'Ошибка создания пользователя' }, 500);
     }
 
-    const expireAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30); // 30 дней
-    const apiPayload = {
+    // Создание пользователя в SyncVK
+    const expireAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 1); // 1 дней
+    const syncvkPayload = {
       username,
-      status: "ACTIVE",
-      trojanPassword: password,
-      ssPassword: password,
-      vlessUuid: uuidv4.generate(),
-      trafficLimitBytes: 0,
-      trafficLimitStrategy: "NO_RESET",
       expireAt: expireAt.toISOString(),
     };
 
-    const apiResponse = await fetch("https://panel.syncvk.com/api/users", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(apiPayload),
+    const syncvkResponse = await fetch('https://panel.syncvk.com/api/users', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${syncvkKey}`,
+      },
+      body: JSON.stringify(syncvkPayload),
     });
 
-    if (!apiResponse.ok) {
-      return new Response(JSON.stringify({ error: "External API error" }), {
-        status: 502,
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "application/json",
-        },
-      });
+    const syncvkData = await syncvkResponse.json();
+
+    const uuid = syncvkData?.response?.uuid;
+
+    if (!uuid) {
+      console.error('SyncVK response invalid:', syncvkData);
+      return jsonResponse(
+        { error: 'Ошибка при создании SyncVK пользователя' },
+        500
+      );
     }
 
-    const apiData = await apiResponse.json();
+    // Обновляем пользователя с uuid
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({ syncvk_uuid: uuid })
+      .eq('id', newUser.id);
 
-    await supabase
-      .from("users")
-      .update({ syncvk_uuid: apiData.response.uuid })
-      .eq("id", newUser.id);
+    if (updateError) {
+      console.error('Ошибка при обновлении uuid:', updateError);
+      return jsonResponse({ error: 'Не удалось записать syncvk_uuid' }, 500);
+    }
 
-    return new Response(JSON.stringify({ user: apiData.response }), {
-      status: 200,
-      headers: {
-        ...corsHeaders,
-        "Content-Type": "application/json",
+    return jsonResponse(
+      {
+        user: {
+          ...newUser,
+          syncvk_uuid: uuid,
+          user_API_data: syncvkData?.response,
+        },
       },
-    });
-
+      200
+    );
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 500,
-      headers: {
-        ...corsHeaders,
-        "Content-Type": "application/json",
-      },
-    });
+    console.error('Общая ошибка:', err);
+    return jsonResponse({ error: 'Внутренняя ошибка сервера' }, 500);
   }
 });
+
+// --- Хелперы ---
+
+function corsHeaders() {
+  return {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Content-Type': 'application/json',
+  };
+}
+
+function jsonResponse(data: unknown, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: corsHeaders(),
+  });
+}

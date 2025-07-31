@@ -169,6 +169,12 @@
   align-items: center;
 }
 
+.auth_error_message {
+  color: #EB2929;
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+}
+
 @media (max-width: 48rem) {
   .auth_screen {
     flex-direction: column;

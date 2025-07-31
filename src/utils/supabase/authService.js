@@ -3,7 +3,8 @@ import bcrypt from 'bcryptjs';
 import axios from 'axios';
 
 function generatePassword(length = 12) {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const chars =
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let pwd = '';
   for (let i = 0; i < length; i++) {
     pwd += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -16,7 +17,8 @@ function generatePassword(length = 12) {
 //   const usernamePattern = /^[a-zA-Z0-9_-]{6,36}$/;
 //   if (!usernamePattern.test(username)) {
 //     return {
-//       error: 'Username должен быть от 6 до 36 символов и содержать только латинские буквы, цифры, "_", "-"',
+//       error:
+//         'Username должен быть от 6 до 36 символов и содержать только латинские буквы, цифры, "_", "-"',
 //     };
 //   }
 
@@ -44,9 +46,11 @@ function generatePassword(length = 12) {
 //   if (insertError || !newUser) {
 //     console.log(insertError, 'Error creating user in Supabase');
 //     console.log('New user data:', newUser);
-    
-    
-//     return { error: 'Ошибка при создании пользователя в Supabase', detail: insertError };
+
+//     return {
+//       error: 'Ошибка при создании пользователя в Supabase',
+//       detail: insertError,
+//     };
 //   }
 
 //   // Сбор данных для API
@@ -66,12 +70,14 @@ function generatePassword(length = 12) {
 //     expireAt: expireAt.toISOString(),
 //     createdAt: now.toISOString(),
 //   };
-// const proxy = 'https://cors-anywhere.herokuapp.com/';
 //   // Запрос к SyncVK API
 //   const options = {
 //     method: 'POST',
-//     url: `${proxy}https://panel.syncvk.com/api/users`,
-//     headers: { 'Content-Type': 'application/json' },
+//     url: `https://panel.syncvk.com/api/users`,
+//     headers: {
+//       'Content-Type': 'application/json',
+//       Authorization: `Bearer ${process.env.SYNC_VK_ACCESS_TOKEN}`, // Используем токен из переменных окружения
+//     },
 //     data: payload,
 //   };
 
@@ -80,7 +86,10 @@ function generatePassword(length = 12) {
 //     const { data } = await axios.request(options);
 //     apiResponse = data;
 //   } catch (error) {
-//     return { error: 'Ошибка при отправке в SyncVK API', detail: error?.response?.data || error.message };
+//     return {
+//       error: 'Ошибка при отправке в SyncVK API',
+//       detail: error?.response?.data || error.message,
+//     };
 //   }
 
 //   if (!apiResponse?.response?.uuid) {
@@ -96,13 +105,15 @@ function generatePassword(length = 12) {
 //     .eq('id', newUser.id);
 
 //   if (updateError) {
-//     return { error: 'UUID получен, но не удалось сохранить в Supabase', detail: updateError };
+//     return {
+//       error: 'UUID получен, но не удалось сохранить в Supabase',
+//       detail: updateError,
+//     };
 //   }
 
 //   // Успешно — возвращаем пользователя из SyncVK API
 //   return { data: apiResponse.response };
 // }
-
 
 export async function register(username, password) {
   // Проверка формата username
@@ -137,8 +148,7 @@ export async function register(username, password) {
   if (insertError || !newUser) {
     console.log(insertError, 'Error creating user in Supabase');
     console.log('New user data:', newUser);
-    
-    
+
     return { error: 'Ошибка при создании пользователя в Supabase', detail: insertError };
   }
 

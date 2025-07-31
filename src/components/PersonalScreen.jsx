@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import userIcon from '../assets/icons/user.png';
 import copyIcon from '../assets/icons/copy.png';
 import calendarIcon from '../assets/icons/calendar.png';
@@ -13,14 +13,56 @@ import googlePlayIcon from '../assets/icons/google-play-icon.png';
 import crossBlackIcon from '../assets/icons/cross-black.png';
 import checkIcon from '../assets/icons/check.png';
 import './PersonalScreen.css';
+import { supabase } from '../utils/supabase/supabaseClient';
 
-export default function PersonalScreen() {
+function hoursWordFixer(hours) {
+  if (hours % 10 === 1 && hours % 100 !== 11) return 'час';
+  if ([2, 3, 4].includes(hours % 10) && ![12, 13, 14].includes(hours % 100)) return 'часа';
+  return 'часов';
+}
+
+export default function PersonalScreen({ user, logOut }) {
+  const [availableDays, setAvailableDays] = useState('0 дней');
+
   const [modal, setModal] = useState(null);
   const [days, setDays] = useState(30);
 
   const handleCopy = () => navigator.clipboard.writeText('42GJ4C');
   const closeModal = () => setModal(null);
+  
+  useEffect(() => {
+      const getTimeLeft = async () => {
+        const { data, error } = await supabase.functions.invoke(
+          'getTimeLeft',
+          {
+            body: { name: 'Functions', expiresAt: user?.user_API_data?.expireAt },
+          }
+        );
+  
+        if (error) {
+          console.error('Ошибка при вызове функции:', error);
+        } else {
+          console.log('Ответ от функции:', data);
+          setAvailableDays(data.isHours
+            ? `${data.timeLeft} ${hoursWordFixer(data.timeLeft)}`
+            : `${data.timeLeft} дней`);
+        }
+      };
+      getTimeLeft();
+      
+  }, [ user?.user_API_data?.expireAt])
+  
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
 
+    if (error) {
+      console.error('Ошибка выхода:', error.message);
+    } else {
+      // Очисти локальное состояние, редирект и т.п.
+      console.log('Вы вышли успешно');
+      logOut();
+    }
+  };
   const renderModal = () => (
     <div className='modal_overlay'>
       <div className='modal_window'>
@@ -75,7 +117,7 @@ export default function PersonalScreen() {
   return (
     <div className='personal_screen'>
       <h1 className='personal_title'>Личный кабинет</h1>
-
+      
       <div className='personal_container'>
         <div className='personal_block full'>
           <div className='personal_header'>
@@ -83,7 +125,7 @@ export default function PersonalScreen() {
             <span>Ваш ID</span>
           </div>
           <div className='personal_content'>
-            <span className='personal_code'>42GJ4C</span>
+            <span className='personal_code'>{user?.code}</span>
             <img
               src={copyIcon}
               alt='copy'
@@ -104,7 +146,7 @@ export default function PersonalScreen() {
               <span>Кол-во дней</span>
             </div>
             <div className='personal_content spaced'>
-              <span>32 дня</span>
+              <span>{availableDays}</span>
             </div>
           </div>
           <button className='extend_btn' onClick={() => setModal('extend')}>
@@ -118,7 +160,7 @@ export default function PersonalScreen() {
             <span>Состояние ключа</span>
           </div>
           <div className='personal_content'>
-            Активен
+            {user?.user_API_data?.status === 'ACTIVE' ? 'Активен' : 'Неактивен'}
             <img src={shieldIcon} alt='shield' />
           </div>
         </div>
@@ -159,6 +201,15 @@ export default function PersonalScreen() {
         <div className='personal_block wide store'>
           <img src={googlePlayIcon} alt='GooglePlay' className='store_icon' />
           <span>Скачать в Google Play</span>
+        </div>
+        <div
+          className='personal_block wide-short delete_block'
+          onClick={() => handleLogout()}
+        >
+          <div className='personal_header'>
+            <img className='personal_icon' src={crossRedIcon} alt='delete' />
+          </div>
+          <div className='personal_content'>Выйти</div>
         </div>
       </div>
 
