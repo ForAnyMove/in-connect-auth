@@ -23,7 +23,23 @@ export default function AuthScreen({ accessAuth, authUser }) {
     // Глобально объявляем функцию
     window.onTelegramAuth = function (user) {
       console.log('Получен пользователь Telegram:', user);
-      // например: fetch('/api/telegram-auth', { method: 'POST', body: JSON.stringify(user) })
+      try {
+        const authUserByTelegram = async () => {
+          const { data, error } = await supabase.functions.invoke('loginUserByTelegram', {
+            body: { name: 'Functions', username: user.username, tgId: user.id },
+          });
+
+          if (error) {
+            console.error('Ошибка при вызове функции:', error);
+          } else {
+            authUser(data.user);
+            accessAuth();
+          }
+        };
+        authUserByTelegram();
+      } catch (error) {
+        console.error('Ошибка при обработке пользователя Telegram:', error);
+      }
     };
 
     // Создаём и добавляем виджет
