@@ -11,6 +11,10 @@ const initialState = {
   password: '',
 };
 
+const BOT_USERNAME = '@InConnectBot'; // замените на ваш бот-юзернейм
+const BOT_ID = '8238783776'; // замените на ваш bot_id (число, без @)
+const TELEGRAM_WIDGET_URL = `https://telegram.org/js/telegram-widget.js?7`;
+
 export default function AuthScreen({ accessAuth, authUser }) {
   const [form, setForm] = useState(initialState);
   const [showPassword, setShowPassword] = useState(false);
@@ -20,40 +24,68 @@ export default function AuthScreen({ accessAuth, authUser }) {
   const [validationErrorPassword, setValidationErrorPassword] = useState('');
 
   useEffect(() => {
-    // Глобально объявляем функцию
-    window.onTelegramAuth = function (user) {
-      console.log('Получен пользователь Telegram:', user);
-      try {
-        const authUserByTelegram = async () => {
-          const { data, error } = await supabase.functions.invoke('loginUserByTelegram', {
-            body: { name: 'Functions', username: user.username, tgId: user.id },
-          });
+    const scriptId = 'telegram-login-script';
 
-          if (error) {
-            console.error('Ошибка при вызове функции:', error);
-          } else {
-            authUser(data.user);
-            accessAuth();
-          }
-        };
-        authUserByTelegram();
-      } catch (error) {
-        console.error('Ошибка при обработке пользователя Telegram:', error);
-      }
-    };
-
-    // Создаём и добавляем виджет
-    const script = document.createElement('script');
-    script.src = 'https://telegram.org/js/telegram-widget.js?7';
-    script.async = true;
-    script.setAttribute('data-telegram-login', 'inConnect_auth_bot'); // без @
-    script.setAttribute('data-size', 'large');
-    script.setAttribute('data-userpic', 'false');
-    script.setAttribute('data-onauth', 'onTelegramAuth(user)');
-    script.setAttribute('data-request-access', 'write');
-
-    document.getElementById('telegram-button')?.appendChild(script);
+    if (!document.getElementById(scriptId)) {
+      const script = document.createElement('script');
+      script.src = TELEGRAM_WIDGET_URL;
+      script.async = true;
+      script.id = scriptId;
+      document.head.appendChild(script);
+    }
   }, []);
+
+  const handleTelegramLogin = () => {
+    if (window.Telegram?.Login?.auth) {
+      window.Telegram.Login.auth(
+        {
+          bot_id: BOT_ID, // замените на свой bot_id (число, без @)
+          request_access: true,
+        },
+        (user) => {
+          if (!user) {
+            console.log('Отменено пользователем или ошибка');
+            return;
+          }
+          try {
+            const authUserByTelegram = async () => {
+              const { data, error } = await supabase.functions.invoke(
+                'loginUserByTelegram',
+                {
+                  body: {
+                    name: 'Functions',
+                    username: user.username,
+                    tgId: user.id,
+                  },
+                }
+              );
+
+              if (error) {
+                console.error('Ошибка при вызове функции:', error);
+              } else {
+                const { authData, authError } =
+                  await supabase.auth.signInWithPassword({
+                    email: `${data.user.username}@generated.email`,
+                    password: data.user.password_hash,
+                  });
+
+                if (authError) {
+                  console.error('Ошибка при входе:', authError);
+                } else {
+                  console.log('Пользователь успешно вошел:', authData);
+                }
+                authUser(data.user);
+                accessAuth();
+              }
+            };
+            authUserByTelegram();
+          } catch (error) {
+            console.error('Ошибка при обработке пользователя Telegram:', error);
+          }
+        }
+      );
+    }
+  };
 
   const validateLogin = (login) => {
     const usernamePattern = /^[a-zA-Z0-9_-]{6,36}$/;
@@ -107,9 +139,9 @@ export default function AuthScreen({ accessAuth, authUser }) {
       } else {
         const { authData, authError } = await supabase.auth.signInWithPassword({
           email: `${username}@generated.email`,
-          password: data.user.password_hash
+          password: data.user.password_hash,
         });
-        
+
         if (authError) {
           console.error('Ошибка при входе:', authError);
         } else {
@@ -252,7 +284,12 @@ export default function AuthScreen({ accessAuth, authUser }) {
               {isRegister ? 'Войти' : 'Зарегистрироваться'}
             </button>
           </div>
-          <button id='telegram-button' className='auth_telegram_btn' type='button'>
+          <button
+            id='telegram-button'
+            className='auth_telegram_btn'
+            type='button'
+            onClick={handleTelegramLogin}
+          >
             <svg
               xmlns='http://www.w3.org/2000/svg'
               width='25'

@@ -32,16 +32,6 @@ serve(async (req) => {
       .maybeSingle();
 
     if (existingUser) {
-      const { authData, authError } = await supabase.auth.signInWithPassword({
-        email: `${existingUser.username}@generated.email`,
-        password: existingUser.password_hash,
-      });
-      
-      if (authError) {
-        console.error('Ошибка при входе:', authError);
-      } else {
-        console.log('Пользователь успешно вошел:', authData);
-      }
       // Получаем данные пользователя из SyncVK
       const syncvkRes = await fetch(
         `https://panel.syncvk.com/api/users/by-username/${existingUser.username}`,
@@ -70,7 +60,7 @@ serve(async (req) => {
     }
 
     // Хэширование пароля
-    const hashedPassword = bcrypt.hashSync(tgId, 10);
+    const hashedPassword = bcrypt.hashSync(`tg_${tgId}_pass`, 10);
     // Регистрируем пользователя через Supabase Auth
     const { data: authData, error: authError } =
       await supabase.auth.admin.createUser({
