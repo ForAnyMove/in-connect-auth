@@ -163,6 +163,23 @@
     grid-template-columns: 1fr;
     height: auto;
   }
+  .personal_content {
+    gap: 0.4rem;
+    font-size: 1rem;
+  }
+  .personal_block {
+    padding: 1rem 0.7rem;
+    height: 12vh;
+  }
+  .personal_header {
+    font-size: 0.9rem;
+  }
+  .personal_icon {
+    max-height: 2.8rem;
+  }
+  .store span {
+    font-size: 1rem;
+  }
 }
 
 /* Modal Styles */

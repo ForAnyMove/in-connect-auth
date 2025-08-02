@@ -61,5 +61,38 @@
   align-items: center;
 }
 .nav-panel>ul>li>a>img {
-  width: 80%;
+  width: 70%;
+}
+
+@media (max-width: 48rem) {
+  .header {
+    padding: 1vh 1vh;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .logo-panel {
+    width: 50%;
+    height: 5vh;
+    align-self: flex-start;
+    z-index: 10;
+  }
+  .logo-container {
+    width: auto;
+    height: 80%;
+  }
+  .nav-panel {
+    position: fixed;
+    bottom: 1vh;
+    height: 6vh;
+    width: auto;
+    z-index: 10;
+  }
+  .nav-panel>ul {
+    padding: 0 1vh;
+    gap: 0.5vh;
+  }
+  .nav-panel>ul>li {
+    height: 80%;
+    aspect-ratio: 1/1;
+  }
 }

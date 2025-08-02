@@ -136,6 +136,9 @@ export default function AuthScreen({ accessAuth, authUser }) {
 
       if (error) {
         console.error('Ошибка при вызове функции:', error);
+        setError(true);
+        setForm(prev => ({ ...prev, login: '', password: '' }));
+
       } else {
         const { authData, authError } = await supabase.auth.signInWithPassword({
           email: `${username}@generated.email`,
