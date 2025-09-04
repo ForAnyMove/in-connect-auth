@@ -76,6 +76,7 @@ serve(async (req) => {
     const syncvkPayload = {
       username,
       expireAt: expireAt.toISOString(),
+      hwidDeviceLimit: 1, // Ограничение по устройствам
     };
 
     const syncvkResponse = await fetch('https://panel.syncvk.com/api/users', {
@@ -102,7 +103,7 @@ serve(async (req) => {
     // Обновляем пользователя с uuid
     const { error: updateError } = await supabase
       .from('users')
-      .update({ syncvk_uuid: uuid })
+      .update({ syncvk_uuid: uuid, isVKSync: true })
       .eq('id', newUser.id);
 
     if (updateError) {
@@ -115,6 +116,7 @@ serve(async (req) => {
         user: {
           ...newUser,
           syncvk_uuid: uuid,
+          isVKSync: true,
           user_API_data: syncvkData?.response,
         },
       },

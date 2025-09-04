@@ -5,8 +5,21 @@ import support from '../assets/icons/support.png';
 import refresh from '../assets/icons/refresh.png';
 import download from '../assets/icons/download.png';
 import profile from '../assets/icons/profile.png';
+import { supabase } from '../utils/supabase/supabaseClient';
 
-export default function Header() {
+export default function Header({logOut}) {
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      console.error('Ошибка выхода:', error.message);
+    } else {
+      // Очисти локальное состояние, редирект и т.п.
+      console.log('Вы вышли успешно');
+      logOut();
+    }
+  };
+
   return (
     <header className='header'>
       <div className='logo-panel'>
@@ -37,10 +50,10 @@ export default function Header() {
               <img src={download} alt='download' className='nav_icon' />
             </a>
           </li>
-          <li className='nav-item active'>
-            <a href='#profile'>
+          <li className='nav-item active'onClick={() => handleLogout()}>
+            <div>
               <img src={profile} alt='profile' className='nav_icon' />
-            </a>
+            </div>
           </li>
         </ul>
       </nav>

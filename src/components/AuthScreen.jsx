@@ -118,7 +118,7 @@ export default function AuthScreen({ accessAuth, authUser }) {
         console.error('Ошибка получения данных пользователя:', error);
         return;
       } else {
-        authUser(data.user); // твоя логика
+        authUser(data.user);
         accessAuth(); // переход в защищённую часть
       }
     };
@@ -191,6 +191,16 @@ export default function AuthScreen({ accessAuth, authUser }) {
       if (error) {
         console.error('Ошибка при вызове функции:', error);
       } else {
+        const { authData, authError } = await supabase.auth.signInWithPassword({
+          email: `${username}@generated.email`,
+          password: data.user.password_hash,
+        });
+
+        if (authError) {
+          console.error('Ошибка при входе:', authError);
+        } else {
+          console.log('Пользователь успешно вошел:', authData);
+        }
         authUser(data.user);
         accessAuth();
       }

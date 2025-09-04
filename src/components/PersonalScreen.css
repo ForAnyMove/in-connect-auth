@@ -113,6 +113,10 @@
   font-size: 1.2rem;
 }
 
+.personal_content img.shield{
+  width: 10%;
+}
+
 .personal_content.spaced {
   justify-content: space-between;
 }
@@ -153,6 +157,12 @@
   gap: 0.4rem;
   cursor: pointer;
   font-size: 0.9rem;
+  text-decoration: none;
+}
+.extend_btn.gray {
+  background-color: #8b8b8b;
+  color: #080808;
+  opacity: 0.3;
 }
 .extend_btn img {
   width: 15%;

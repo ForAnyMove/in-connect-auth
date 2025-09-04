@@ -6,16 +6,18 @@ import AuthScreen from './components/AuthScreen';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState([])
+  const [user, setUser] = useState(null);
 
   return (
     <>
-      <Header />
-      {isAuthenticated ? (
-        <PersonalScreen user={user} logOut={() => {
-          setUser([]);
+      <Header
+        logOut={() => {
+          setUser(null);
           setIsAuthenticated(false);
-        }}/>
+        }}
+      />
+      {isAuthenticated ? (
+        <PersonalScreen user={user} setUser={setUser} />
       ) : (
         <AuthScreen
           accessAuth={() => setIsAuthenticated(true)}
