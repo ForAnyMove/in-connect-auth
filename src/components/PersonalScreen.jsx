@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import userIcon from '../assets/icons/user.png';
 import copyIcon from '../assets/icons/copy.png';
 import calendarIcon from '../assets/icons/calendar.png';
@@ -12,6 +12,7 @@ import appStoreIcon from '../assets/icons/app-store-icon.png';
 import googlePlayIcon from '../assets/icons/google-play-icon.png';
 import crossBlackIcon from '../assets/icons/cross-black.png';
 import checkIcon from '../assets/icons/check.png';
+import greenCheckIcon from '../assets/icons/check-green.png';
 import './PersonalScreen.css';
 import { supabase } from '../utils/supabase/supabaseClient';
 
@@ -35,9 +36,22 @@ export default function PersonalScreen({ user, setUser }) {
 
   const [modal, setModal] = useState(null);
   const [days, setDays] = useState(30);
+  const [toastVisible, setToastVisible] = useState(false);
+  const toastTimerRef = useRef(null);
 
-  const handleCopy = () =>
-    navigator.clipboard.writeText(user?.code || 'Нет ID');
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(user?.code || 'Нет ID');
+      // показать тост и перезапустить таймер скрытия
+      setToastVisible(true);
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+      toastTimerRef.current = setTimeout(() => setToastVisible(false), 1500);
+    } catch (e) {
+      // на всякий — можно вывести alert или т.п.
+      console.error('clipboard error', e);
+    }
+  };
+
   const closeModal = () => setModal(null);
 
   const isUserDataMissing = !user?.user_API_data;
@@ -76,7 +90,7 @@ export default function PersonalScreen({ user, setUser }) {
               : modal === 'change'
               ? changeDeviceIcon
               : modal === 'create'
-              ? checkIcon
+              ? greenCheckIcon
               : crossRedIcon
           }
           alt='modal icon'
@@ -236,6 +250,9 @@ export default function PersonalScreen({ user, setUser }) {
 
   return (
     <div className='personal_screen'>
+      <div className={`copy-toast ${toastVisible ? 'copy-toast--show' : ''}`}>
+        ID успешно скопирован
+      </div>
       <h1 className='personal_title'>Личный кабинет</h1>
 
       <div className='personal_container'>
@@ -322,11 +339,11 @@ export default function PersonalScreen({ user, setUser }) {
           </div>
         ) : (
           <div
-            className='personal_block wide-short delete_block'
+            className='personal_block wide-short create_block'
             onClick={() => setModal('create')}
           >
             <div className='personal_header'>
-              <img className='personal_icon' src={checkIcon} alt='delete' />
+              <img className='personal_icon' src={greenCheckIcon} alt='create' />
             </div>
             <div className='personal_content'>Создать ключ</div>
           </div>

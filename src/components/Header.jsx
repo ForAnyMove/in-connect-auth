@@ -4,7 +4,7 @@ import home from '../assets/icons/home.png';
 import support from '../assets/icons/support.png';
 import refresh from '../assets/icons/refresh.png';
 import download from '../assets/icons/download.png';
-import profile from '../assets/icons/profile.png';
+import profile from '../assets/icons/sign-out.png';
 import { supabase } from '../utils/supabase/supabaseClient';
 
 export default function Header({logOut}) {
@@ -50,7 +50,7 @@ export default function Header({logOut}) {
               <img src={download} alt='download' className='nav_icon' />
             </a>
           </li>
-          <li className='nav-item active'onClick={() => handleLogout()}>
+          <li className='nav-item'onClick={() => handleLogout()}>
             <div>
               <img src={profile} alt='profile' className='nav_icon' />
             </div>

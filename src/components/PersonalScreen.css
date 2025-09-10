@@ -101,6 +101,12 @@
 .delete_block .personal_content {
   color: #eb2929;
 }
+.create_block {
+  background-color: #00800032;
+}
+.create_block .personal_content {
+  color: #008000;
+}
 .personal_header span {
   opacity: 0.5;
 }
@@ -166,6 +172,30 @@
 }
 .extend_btn img {
   width: 15%;
+}
+.copy-toast {
+  position: fixed;
+  top: 2vh;
+  left: 50%;
+  transform: translate(-50%, -1vh); /* старт — чуть выше */
+  background: #1f1f1f;
+  color: #fff;
+  padding: 1.5vh 2vh;
+  border-radius: 999px;
+  font-size: 1.6vh;
+  line-height: 1;
+  opacity: 0;
+  pointer-events: none;           /* клики проходят сквозь */
+  box-shadow: 0 6px 20px rgba(0,0,0,.25);
+  transition:
+    opacity 240ms ease,
+    transform 240ms cubic-bezier(.22,.61,.36,1);
+  z-index: 9999;
+}
+
+.copy-toast.copy-toast--show {
+  opacity: 1;
+  transform: translate(-50%, 0);  /* выезд вниз */
 }
 
 @media (max-width: 48rem) {
